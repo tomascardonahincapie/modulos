@@ -1,0 +1,23 @@
+[
+    {
+        "id": "1",
+        "name": "Sofia Martinez",
+        "email": "sofiamartinez@gmail.com",
+        "age": 31,
+        "status": "married"
+    },
+    {
+        "id": "2",
+        "name": "Andres herrera",
+        "email": "andresherrera@gmail.com",
+        "age": 29,
+        "status": "widowed"
+    },
+    {
+        "id": "3",
+        "name": "Valentina Rios",
+        "email": "valerios@gmail.com",
+        "age": 24,
+        "status": "single"
+    }
+]

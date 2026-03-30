@@ -33,7 +33,7 @@ def main():
 
     print("\n──── Invalid fields ──────────────────────────────────")
     try_create(service, id="4", name="Isa",  email="not-an-email",  age=25,  status="single")
-    try_create(service, id="5", name="Mike", email="john@gmail.com", age=200, status="married")
+    try_create(service, id="5", name="john", email="john@gmail.com", age=200, status="married")
 
     print("\n──── Records in memory ───────────────────────────────")
     records = service.list_records()
