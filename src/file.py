@@ -12,10 +12,10 @@ def load_data():
         with open(DATA_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
     except json.JSONDecodeError:
-        print("⚠ Warning: data file is corrupted. Starting with empty list.")
+        print("⚠ Advertencia: El archivo de los datos esta corrupto. Iniciando con lista nueva.")
         return []
     except Exception as e:
-        print(f"⚠ Unexpected error loading data: {e}")
+        print(f"⚠ Error inesperado al cargar los datos: {e}")
         return []
 
 
@@ -25,4 +25,4 @@ def save_data(data):
         with open(DATA_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        print(f"⚠ Error saving data: {e}")
+        print(f"⚠ Error guardando datos: {e}")
