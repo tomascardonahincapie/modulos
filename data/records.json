@@ -5,5 +5,19 @@
         "email": "tomascardonahincapie@gmail.com",
         "age": 17,
         "status": "soltero"
+    },
+    {
+        "id": "3",
+        "name": "tomas",
+        "email": "sasa@gmail.com",
+        "age": 20,
+        "status": "casado"
+    },
+    {
+        "id": "4",
+        "name": "a",
+        "email": "toama@gmail.com",
+        "age": 22,
+        "status": "divorciado"
     }
 ]

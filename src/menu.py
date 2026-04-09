@@ -1,3 +1,4 @@
+
 from colorama import Fore, Back, Style, init
 from service import (
     new_register,
@@ -6,6 +7,7 @@ from service import (
     update_record,
     delete_record,
 )
+from integration import generate_fake_records
 
 # Inicializar colorama (autoreset evita tener que resetear manualmente)
 init(autoreset=True)
@@ -16,9 +18,9 @@ init(autoreset=True)
 
 def _header():
     """Imprime el encabezado del sistema."""
-    print(Fore.CYAN + Style.BRIGHT + "\n" + "═" * 50)
+    print(Fore.CYAN + Style.BRIGHT + "\n" + "-" * 50)
     print(Fore.CYAN + Style.BRIGHT + "   📋  SISTEMA DE GESTIÓN DE REGISTROS")
-    print(Fore.CYAN + Style.BRIGHT + "═" * 50)
+    print(Fore.CYAN + Style.BRIGHT + "-" * 50)
 
 
 def _section(title: str):
@@ -63,6 +65,7 @@ def _show_menu():
         ("3", "Buscar registro"),
         ("4", "Actualizar registro"),
         ("5", "Eliminar registro"),
+        ("6", "Generar 10 registros falsos"),
         ("0", "Salir"),
     ]
     print()
@@ -74,7 +77,7 @@ def _show_menu():
 
 def _read_option() -> str:
     """Lee la opción del usuario con validación básica."""
-    valid = {"0", "1", "2", "3", "4", "5"}
+    valid = {"0", "1", "2", "3", "4", "5", "6"}
     while True:
         choice = _ask("Selecciona una opción")
         if choice in valid:
@@ -197,6 +200,22 @@ def _flow_delete():
     _pause()
 
 
+def _flow_generate_fake():
+    _section("GENERAR REGISTROS FALSOS")
+    try:
+        count_str = _ask("Número de registros a generar (por defecto 10)")
+        count = int(count_str) if count_str else 10
+        if count <= 0:
+            raise ValueError("El número debe ser positivo.")
+        records = generate_fake_records(count=count)
+        _ok(f"Se generaron {len(records)} registros falsos exitosamente.")
+    except ValueError as e:
+        _err(str(e))
+    except Exception as e:
+        _err(f"Error inesperado: {e}")
+    _pause()
+
+
 # ──────────────────────────────────────────────
 # Dispatcher
 # ──────────────────────────────────────────────
@@ -207,6 +226,7 @@ _ACTIONS = {
     "3": _flow_search,
     "4": _flow_update,
     "5": _flow_delete,
+    "6": _flow_generate_fake,
 }
 
 
@@ -216,17 +236,21 @@ _ACTIONS = {
 
 def run():
     """Bucle principal del menú. Se repite hasta que el usuario elige '0'."""
-    while True:
-        _show_menu()
-        option = _read_option()
+    try:
+        while True:
+            _show_menu()
+            option = _read_option()
 
-        if option == "0":
-            print(Fore.CYAN + Style.BRIGHT + "\n  ¡Hasta luego! 👋\n")
-            break
+            if option == "0":
+                print(Fore.CYAN + Style.BRIGHT + "\n  ¡Hasta luego! 👋\n")
+                break
 
-        action = _ACTIONS.get(option)
-        if action:
-            action()
+            action = _ACTIONS.get(option)
+            if action:
+                action()
+    except KeyboardInterrupt:
+        print(Fore.YELLOW + "\n\n  ⚠  Programa interrumpido por el usuario. ¡Hasta luego! 👋\n")
+        return
 
 
 if __name__ == "__main__":
