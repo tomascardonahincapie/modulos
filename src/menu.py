@@ -1,12 +1,6 @@
-
 from colorama import Fore, Back, Style, init
-from service import (
-    new_register,
-    list_records,
-    search_record,
-    update_record,
-    delete_record,
-)
+from typing import Optional
+from service import RecordService
 from integration import generate_fake_records
 
 # Inicializar colorama (autoreset evita tener que resetear manualmente)
@@ -16,29 +10,29 @@ init(autoreset=True)
 # Helpers de presentación
 # ──────────────────────────────────────────────
 
-def _header():
+def _header() -> None:
     """Imprime el encabezado del sistema."""
     print(Fore.CYAN + Style.BRIGHT + "\n" + "-" * 50)
     print(Fore.CYAN + Style.BRIGHT + "   📋  SISTEMA DE GESTIÓN DE REGISTROS")
     print(Fore.CYAN + Style.BRIGHT + "-" * 50)
 
 
-def _section(title: str):
+def _section(title: str) -> None:
     """Imprime un separador de sección."""
     print(Fore.YELLOW + Style.BRIGHT + f"\n── {title} " + "─" * (40 - len(title)))
 
 
-def _ok(msg: str):
+def _ok(msg: str) -> None:
     """Mensaje de éxito."""
     print(Fore.GREEN + f"  ✔  {msg}")
 
 
-def _err(msg: str):
+def _err(msg: str) -> None:
     """Mensaje de error."""
     print(Fore.RED + f"  ✖  {msg}")
 
 
-def _info(msg: str):
+def _info(msg: str) -> None:
     """Mensaje informativo."""
     print(Fore.BLUE + f"  ℹ  {msg}")
 
@@ -48,15 +42,49 @@ def _ask(prompt: str) -> str:
     return input(Fore.WHITE + Style.BRIGHT + f"  ▶  {prompt}: ").strip()
 
 
-def _pause():
+def _pause() -> None:
     input(Fore.MAGENTA + "\n  Presiona Enter para continuar...")
+
+
+# ──────────────────────────────────────────────
+# Input helpers
+# ──────────────────────────────────────────────
+
+def _get_validated_input(prompt: str, validator) -> Optional[str]:
+    """Get input and validate it."""
+    while True:
+        value = _ask(prompt)
+        if validator(value):
+            return value
+        _err("Entrada inválida. Inténtalo de nuevo.")
+
+
+def _get_int_input(prompt: str) -> Optional[int]:
+    """Get integer input."""
+    while True:
+        value = _ask(prompt)
+        try:
+            return int(value)
+        except ValueError:
+            _err("Debe ser un número entero.")
+
+
+def _get_confirmation(prompt: str) -> bool:
+    """Get yes/no confirmation."""
+    while True:
+        value = _ask(prompt).lower()
+        if value in ['s', 'si', 'y', 'yes']:
+            return True
+        elif value in ['n', 'no']:
+            return False
+        _err("Responde 's' o 'n'.")
 
 
 # ──────────────────────────────────────────────
 # Opciones del menú
 # ──────────────────────────────────────────────
 
-def _show_menu():
+def _show_menu() -> None:
     """Renderiza las opciones del menú principal."""
     _header()
     options = [
@@ -89,20 +117,15 @@ def _read_option() -> str:
 # Flujos de cada opción
 # ──────────────────────────────────────────────
 
-def _flow_create():
+def _flow_create(service: RecordService) -> None:
     _section("CREAR REGISTRO")
     try:
-        record_id = _ask("ID")
-        name    = _ask("Nombre")
-        email   = _ask("Email")
-        age_str = _ask("Edad")
-        if not age_str:
-            raise ValueError("La edad es requerida.")
-        age = int(age_str)
-        status  = _ask("Estado civil (soltero/casado/viudo/divorciado)")
-        if not status:
-            raise ValueError("El estado civil es requerido.")
-        record  = new_register(id=record_id, name=name, email=email, age=age, status=status)
+        id = _ask("ID")
+        name = _ask("Nombre")
+        email = _ask("Email")
+        age = _get_int_input("Edad")
+        status = _ask("Estado civil (soltero/casado/viudo/divorciado)")
+        record = service.create_record(id=id, name=name, email=email, age=age, status=status)
         _ok(f"Registro creado con ID: {record['id']}")
     except ValueError as e:
         _err(str(e))
@@ -111,9 +134,9 @@ def _flow_create():
     _pause()
 
 
-def _flow_list():
+def _flow_list(service: RecordService) -> None:
     _section("LISTADO DE REGISTROS")
-    records = list_records()
+    records = service.list_records()
     if not records:
         _info("No hay registros almacenados.")
     else:
@@ -128,13 +151,13 @@ def _flow_list():
     _pause()
 
 
-def _flow_search():
+def _flow_search(service: RecordService) -> None:
     _section("BUSCAR REGISTRO")
     try:
         query = _ask("ID o nombre a buscar")
-        results = search_record(id=query)
+        results = service.search_record(id=query)
         if not results:
-            results = search_record(name=query)
+            results = service.search_record(name=query)
         if not results:
             _info("No se encontraron registros con ese criterio.")
         else:
@@ -147,12 +170,12 @@ def _flow_search():
     _pause()
 
 
-def _flow_update():
+def _flow_update(service: RecordService) -> None:
     _section("ACTUALIZAR REGISTRO")
     try:
         record_id = _ask("ID del registro a actualizar")
         _info("Deja en blanco los campos que no quieras cambiar.")
-        name  = _ask("Nuevo nombre")
+        name = _ask("Nuevo nombre")
         email = _ask("Nuevo email")
         age_str = _ask("Nueva edad")
         status = _ask("Nuevo estado civil")
@@ -174,7 +197,7 @@ def _flow_update():
         if not fields:
             _info("No se indicaron cambios.")
         else:
-            update_record(record_id, **fields)
+            service.update_record(record_id, **fields)
             _ok("Registro actualizado correctamente.")
     except (ValueError, KeyError) as e:
         _err(str(e))
@@ -183,13 +206,12 @@ def _flow_update():
     _pause()
 
 
-def _flow_delete():
+def _flow_delete(service: RecordService) -> None:
     _section("ELIMINAR REGISTRO")
     try:
         record_id = _ask("ID del registro a eliminar")
-        confirm   = _ask(f"¿Confirmas eliminar el ID {record_id}? (s/n)").lower()
-        if confirm == "s":
-            delete_record(record_id)
+        if _get_confirmation(f"¿Confirmas eliminar el ID {record_id}? (s/n)"):
+            service.delete_record(record_id)
             _ok(f"Registro {record_id} eliminado.")
         else:
             _info("Operación cancelada.")
@@ -200,7 +222,7 @@ def _flow_delete():
     _pause()
 
 
-def _flow_generate_fake():
+def _flow_generate_fake(service: RecordService) -> None:
     _section("GENERAR REGISTROS FALSOS")
     try:
         count_str = _ask("Número de registros a generar (por defecto 10)")
@@ -234,8 +256,9 @@ _ACTIONS = {
 # Punto de entrada del menú
 # ──────────────────────────────────────────────
 
-def run():
+def run() -> None:
     """Bucle principal del menú. Se repite hasta que el usuario elige '0'."""
+    service = RecordService()
     try:
         while True:
             _show_menu()
@@ -247,7 +270,7 @@ def run():
 
             action = _ACTIONS.get(option)
             if action:
-                action()
+                action(service)
     except KeyboardInterrupt:
         print(Fore.YELLOW + "\n\n  ⚠  Programa interrumpido por el usuario. ¡Hasta luego! 👋\n")
         return
